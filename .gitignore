@@ -128,5 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Emacs backups
+*~
+
 # API keys and the like
 /secrets
