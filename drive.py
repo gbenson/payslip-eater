@@ -1,9 +1,13 @@
 import json
+import logging
 import os
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+
+logger = logging.getLogger(__name__)
 
 class Drive:
     # Delete the authorized user file if you modify these scopes.
@@ -53,7 +57,31 @@ class Drive:
             token.write(self._creds.to_json())
         return self._creds
 
+    @property
+    def service(self):
+        return build("drive", "v3", credentials=self.credentials)
+
+    def search(self, query):
+        logger.debug(f"files().list(q={repr(query)}, ...)")
+        page_token = None
+        while True:
+            response = self.service.files().list(
+                q=query,
+                spaces="drive",
+                fields="nextPageToken, "
+                       "files(id, name)",
+                pageToken=page_token).execute()
+            for item in response.get("files", []):
+                yield item
+            page_token = response.get("nextPageToken", None)
+            if page_token is None:
+                break
+
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     drive = Drive(secdir=os.path.join(os.path.dirname(__file__),
                                       "secrets"))
-    print(drive.credentials)
+    for item in drive.search(" and ".join((
+            "name = 'payslips'",
+            "mimeType = 'application/vnd.google-apps.folder'"))):
+        logger.info(f"Got {item}")
