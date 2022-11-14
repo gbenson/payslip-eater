@@ -78,10 +78,21 @@ class Drive:
                 break
 
 if __name__ == "__main__":
+    import re
     logging.basicConfig(level=logging.INFO)
     drive = Drive(secdir=os.path.join(os.path.dirname(__file__),
                                       "secrets"))
+    [folder] = list(drive.search(" and ".join((
+        "name = 'payslips'",
+        "mimeType = 'application/vnd.google-apps.folder'"))))
     for item in drive.search(" and ".join((
-            "name = 'payslips'",
-            "mimeType = 'application/vnd.google-apps.folder'"))):
+            f"'{folder['id']}' in parents",
+            "mimeType = 'application/pdf'"))):
+
+        # XXX skip some weird (duplicate?) files.
+        # XXX What are these? I can't see them other than here?!
+        if re.search(r"\s+\(\d+\)\.pdf$", item["name"]) is not None:
+            logger.info(f"warning: skipping {item['name']}")
+            continue
+
         logger.info(f"Got {item}")
