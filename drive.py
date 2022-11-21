@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import os
@@ -6,12 +7,13 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
 
 logger = logging.getLogger(__name__)
 
 class Drive:
     # Delete the authorized user file if you modify these scopes.
-    SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+    SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
     def __init__(self, secdir=None):
         self._secrets_dir = secdir
@@ -96,3 +98,16 @@ if __name__ == "__main__":
             continue
 
         logger.info(f"Got {item}")
+
+        request = drive.service.files().get_media(fileId=item["id"])
+        stream = io.BytesIO()
+        downloader = MediaIoBaseDownload(stream, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+            logger.debug(f"{item['name']}:"
+                         f" Got {int(status.progress() * 100)}%")
+        bytes = stream.getvalue()
+
+        print(f"{item['name']}: Got {len(bytes)} bytes")
+        break
