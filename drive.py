@@ -8,6 +8,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
+from PyPDF2 import PdfReader as PDFReader
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,13 @@ if __name__ == "__main__":
             status, done = downloader.next_chunk()
             logger.debug(f"{item['name']}:"
                          f" Got {int(status.progress() * 100)}%")
-        bytes = stream.getvalue()
+        #bytes = stream.getvalue()
+        #print(f"{item['name']}: Got {len(bytes)} bytes")
 
-        print(f"{item['name']}: Got {len(bytes)} bytes")
+        pdf = PDFReader(stream)
+        print(f"{item['name']}: Got {len(pdf.pages)} pages")
+        page = pdf.pages[0]
+        text = page.extract_text()
+
+        print(text)
         break
