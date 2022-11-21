@@ -1,7 +1,9 @@
+import datetime
 import io
 import json
 import logging
 import os
+import re
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -81,6 +83,8 @@ class Drive:
                 break
 
 class Payslip:
+    DATE_RE = re.compile(r"\sdate:\s+([0-3]\d)/([01]\d)/(\d{4})", re.I)
+
     def __init__(self, stream, filename=None):
         self.filename = filename
         pdf = PDFReader(stream)
@@ -89,8 +93,16 @@ class Payslip:
                              f" (expecting 1)")
         self._raw_text = pdf.pages[0].extract_text()
 
+    @property
+    def date(self):
+        match = self.DATE_RE.search(self._raw_text)
+        if match is None:
+            logger.debug(f"{self.filename}: Got {repr(self._raw_text)}")
+            raise ValueError(f"{self.filename}: No date")
+        day, month, year = map(int, match.groups())
+        return datetime.date(year, month, day)
+
 if __name__ == "__main__":
-    import re
     logging.basicConfig(level=logging.INFO)
     drive = Drive(secdir=os.path.join(os.path.dirname(__file__),
                                       "secrets"))
@@ -121,5 +133,5 @@ if __name__ == "__main__":
         #print(f"{item['name']}: Got {len(bytes)} bytes")
 
         payslip = Payslip(stream, item["name"])
-        print(payslip._raw_text)
+        print(f"{payslip.date}: {payslip.filename}")
         break
