@@ -103,7 +103,7 @@ class Payslip:
         return datetime.date(year, month, day)
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    #logging.basicConfig(level=logging.INFO)
     drive = Drive(secdir=os.path.join(os.path.dirname(__file__),
                                       "secrets"))
     [folder] = list(drive.search(" and ".join((
@@ -134,4 +134,3 @@ if __name__ == "__main__":
 
         payslip = Payslip(stream, item["name"])
         print(f"{payslip.date}: {payslip.filename}")
-        break
