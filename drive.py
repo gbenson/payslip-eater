@@ -80,6 +80,15 @@ class Drive:
             if page_token is None:
                 break
 
+class Payslip:
+    def __init__(self, stream, filename=None):
+        self.filename = filename
+        pdf = PDFReader(stream)
+        if len(pdf.pages) != 1:
+            raise ValueError(f"{filename}: Has {len(pdf.pages)} pages"
+                             f" (expecting 1)")
+        self._raw_text = pdf.pages[0].extract_text()
+
 if __name__ == "__main__":
     import re
     logging.basicConfig(level=logging.INFO)
@@ -111,10 +120,6 @@ if __name__ == "__main__":
         #bytes = stream.getvalue()
         #print(f"{item['name']}: Got {len(bytes)} bytes")
 
-        pdf = PDFReader(stream)
-        print(f"{item['name']}: Got {len(pdf.pages)} pages")
-        page = pdf.pages[0]
-        text = page.extract_text()
-
-        print(text)
+        payslip = Payslip(stream, item["name"])
+        print(payslip._raw_text)
         break
